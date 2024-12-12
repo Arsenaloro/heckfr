@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Stress Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], input[type="number"] {
+            padding: 10px;
+            width: 80%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #333;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WiFi Stress Test</h1>
+        <input type="text" id="targetUrl" placeholder="Enter target URL">
+        <input type="number" id="threadCount" placeholder="Number of Threads (e.g., 500)" min="1">
+        <button onclick="startStressTest()">Start Test</button>
+        <button onclick="stopStressTest()">Stop Test</button>
+        <div id="output"></div>
+        <div id="counter">Pings Sent: 0</div>
+    </div>
+
+    <script>
+        let stopTest = false;
+        let pingCount = 0;
+
+        function startStressTest() {
+            const targetUrl = document.getElementById('targetUrl').value;
+            const threadCount = parseInt(document.getElementById('threadCount').value, 10);
+
+            if (!targetUrl) {
+                alert('Please enter a valid URL.');
+                return;
+            }
+
+            if (!threadCount || threadCount <= 0) {
+                alert('Please enter a valid number of threads.');
+                return;
+            }
+
+            const output = document.getElementById('output');
+            const counter = document.getElementById('counter');
+            output.innerHTML = 'Starting stress test...';
+            stopTest = false;
+
+            for (let i = 0; i < threadCount; i++) {
+                makeBurstRequests(targetUrl, output, counter);
+            }
+        }
+
+        async function makeBurstRequests(url, output, counter) {
+            while (!stopTest) {
+                const promises = [];
+
+                for (let i = 0; i < 10; i++) { // Send 10 requests per burst
+                    promises.push(
+                        fetch(url, { headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+                            .then(response => {
+                                pingCount++;
+                                counter.innerHTML = `Pings Sent: ${pingCount}`;
+                            })
+                            .catch(() => { /* Ignore errors for maximum speed */ })
+                    );
+                }
+
+                await Promise.all(promises); // Wait for all burst requests to complete
+            }
+        }
+
+        function stopStressTest() {
+            stopTest = true;
+            document.getElementById('output').innerHTML += '<div>Stress test stopped.</div>';
+        }
+    </script>
+</body>
+</html>
