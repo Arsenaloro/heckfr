@@ -51,6 +51,22 @@
             border-radius: 4px;
             background: #fafafa;
         }
+        #counter {
+            margin-top: 10px;
+        }
+        .status-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        .green {
+            background-color: green;
+        }
+        .red {
+            background-color: red;
+        }
     </style>
 </head>
 <body>
@@ -62,6 +78,7 @@
         <button onclick="stopStressTest()">Stop Test</button>
         <div id="output"></div>
         <div id="counter">Pings Sent: 0</div>
+        <div id="status" class="status-indicator"></div>
     </div>
 
     <script>
@@ -84,15 +101,17 @@
 
             const output = document.getElementById('output');
             const counter = document.getElementById('counter');
+            const statusIndicator = document.getElementById('status');
             output.innerHTML = 'Starting stress test...';
             stopTest = false;
 
+            // Start multiple threads
             for (let i = 0; i < threadCount; i++) {
-                makeBurstRequests(targetUrl, output, counter);
+                makeBurstRequests(targetUrl, output, counter, statusIndicator);
             }
         }
 
-        async function makeBurstRequests(url, output, counter) {
+        async function makeBurstRequests(url, output, counter, statusIndicator) {
             while (!stopTest) {
                 const promises = [];
 
@@ -102,8 +121,22 @@
                             .then(response => {
                                 pingCount++;
                                 counter.innerHTML = `Pings Sent: ${pingCount}`;
+
+                                // If response is OK, turn the indicator green
+                                if (response.ok) {
+                                    statusIndicator.classList.remove('red');
+                                    statusIndicator.classList.add('green');
+                                } else {
+                                    // If response is not OK, turn the indicator red
+                                    statusIndicator.classList.remove('green');
+                                    statusIndicator.classList.add('red');
+                                }
                             })
-                            .catch(() => { /* Ignore errors for maximum speed */ })
+                            .catch(() => {
+                                // If the request fails, turn the indicator red
+                                statusIndicator.classList.remove('green');
+                                statusIndicator.classList.add('red');
+                            })
                     );
                 }
 
